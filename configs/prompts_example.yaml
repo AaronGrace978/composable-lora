@@ -1,0 +1,10 @@
+# Example prompt/seed grid for `clora eval --prompts ...`.
+prompts:
+  - prompt: "a photo of sks person smiling, studio lighting"
+    seed: 0
+  - prompt: "a photo of sks person outdoors, golden hour"
+    seed: 1
+  - prompt: "a watercolor painting of sks person"
+    seed: 2
+  - prompt: "sks person wearing a red jacket, close-up portrait"
+    seed: 3

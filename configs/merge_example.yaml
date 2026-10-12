@@ -1,0 +1,10 @@
+# Example invocation for `clora merge` (CLI flags only; this file documents
+# the example rather than being parsed, since merge configuration is simple
+# enough to pass directly on the command line):
+#
+#   clora merge adapter_a.safetensors adapter_b.safetensors adapter_c.safetensors \
+#       --method ortho --grow-rank --out merged.safetensors
+#
+# Other --method choices: concat, naive_sum, weighted_sum, ties
+#   clora merge a.safetensors b.safetensors --method weighted_sum \
+#       --weight 0.7 --weight 0.3 --rank 16 --out merged.safetensors

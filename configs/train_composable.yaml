@@ -1,0 +1,21 @@
+# TrainConfig with the composability penalty enabled: group sparsity over
+# rank slots, plus an orthogonality penalty against one or more frozen,
+# previously-trained LoRAs (fill in compose_against with real paths).
+rank: 8
+alpha: 8.0
+lr: 0.001
+steps: 300
+batch_size: 4
+seq_len: 4
+cond_len: 4
+channels: 16
+cond_dim: 16
+depth: 2
+seed: 0
+log_every: 20
+compose:
+  group_sparsity_weight: 0.01
+  orth_weight: 5.0
+  compose_against:
+    - path/to/previous_lora_1.safetensors
+    - path/to/previous_lora_2.safetensors

@@ -1,0 +1,18 @@
+# TrainConfig for the offline CPU toy model (clora.toy_model.ToyUNet).
+# Use with: clora train --config configs/train_toy.yaml --output out.safetensors
+rank: 4
+alpha: 4.0
+lr: 0.001
+steps: 200
+batch_size: 4
+seq_len: 4
+cond_len: 4
+channels: 16
+cond_dim: 16
+depth: 2
+seed: 0
+log_every: 20
+compose:
+  group_sparsity_weight: 0.0
+  orth_weight: 0.0
+  compose_against: []

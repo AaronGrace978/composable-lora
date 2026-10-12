@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "composable-lora"
+version = "0.1.0"
+description = "Measuring and eliminating interference when stacking multiple LoRA adapters on diffusion models (SDXL/Flux via diffusers + peft)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "composable-lora contributors" }]
+keywords = ["lora", "diffusion", "sdxl", "flux", "diffusers", "peft"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "torch>=2.1",
+    "safetensors>=0.4",
+    "numpy>=1.24",
+    "pyyaml>=6.0",
+    "typer>=0.9",
+    "diffusers>=0.27",
+    "peft>=0.10",
+    "transformers>=4.38",
+    "accelerate>=0.27",
+]
+
+[project.optional-dependencies]
+plots = ["matplotlib>=3.7"]
+dev = ["pytest>=7.4", "matplotlib>=3.7"]
+
+[project.scripts]
+clora = "clora.cli:main"
+
+[project.urls]
+Repository = "https://github.com/composable-lora/composable-lora"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/clora"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
