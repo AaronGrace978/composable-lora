@@ -6,6 +6,7 @@ from clora.merge import (
     merge_concat,
     merge_naive_sum,
     merge_orthogonal,
+    merge_symmetric,
     merge_ties,
     merge_weighted_sum,
     sum_of_deltas,
@@ -131,3 +132,41 @@ def test_merge_only_uses_common_layers():
     )
     merged = merge_concat([l1, l2])
     assert set(merged.layers) == {"x"}
+
+
+def _random_loras(out_f=16, in_f=12, ranks=(3, 2, 4), seed=1):
+    g = torch.Generator().manual_seed(seed)
+    return [
+        LoraWeights(layers={"layer0": _layer(torch.randn(r, in_f, generator=g), torch.randn(out_f, r, generator=g), float(r), "layer0")})
+        for r in ranks
+    ]
+
+
+def test_merge_symmetric_exact_when_inputs_already_orthogonal():
+    loras = make_orthogonal_loras()
+    merged = merge_symmetric(loras)
+    assert torch.allclose(merged.layers["layer0"].delta(), sum_of_deltas(loras)["layer0"], atol=1e-4)
+
+
+def test_merge_symmetric_removes_cross_overlap_and_keeps_each_gram():
+    loras = _random_loras()
+    B = merge_symmetric(loras).layers["layer0"].B.double()
+    G = B.T @ B
+    start = 0
+    for lw in loras:
+        layer = lw.layers["layer0"]
+        stop = start + layer.rank
+        own = (layer.scale * layer.B).double()
+        assert torch.allclose(G[start:stop, start:stop], own.T @ own, atol=1e-6, rtol=1e-5)
+        assert torch.allclose(G[start:stop, :start], torch.zeros_like(G[start:stop, :start]), atol=1e-6)
+        start = stop
+
+
+def test_merge_symmetric_is_order_independent():
+    loras = _random_loras()
+    forward = merge_symmetric(loras).layers["layer0"].delta()
+    backward = merge_symmetric(loras[::-1]).layers["layer0"].delta()
+    assert torch.allclose(forward, backward, atol=1e-5)
+    ortho_f = merge_orthogonal(loras).layers["layer0"].delta()
+    ortho_b = merge_orthogonal(loras[::-1]).layers["layer0"].delta()
+    assert not torch.allclose(ortho_f, ortho_b, atol=1e-3)

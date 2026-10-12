@@ -152,3 +152,15 @@ def test_all_pairs_overlap_three_loras():
     assert set(pairs) == {("a", "b"), ("a", "c"), ("b", "c")}
     for score in pairs.values():
         assert 0.0 <= score <= 1.0
+
+
+def test_shared_block_energy_separates_one_sided_from_two_sided_overlap():
+    from clora.overlap import shared_block_energy, subspace_overlap_score
+
+    eye = torch.eye(8)
+    base = LoraLayer(name="x", A=eye[:2], B=eye[:, :2], alpha=2.0)
+    same_block = LoraLayer(name="x", A=eye[:2] * 3, B=eye[:, :2] * 0.5, alpha=2.0)
+    same_out_other_in = LoraLayer(name="x", A=eye[4:6], B=eye[:, :2], alpha=2.0)
+    assert abs(shared_block_energy(base, same_block) - 1.0) < 1e-6
+    assert subspace_overlap_score(base, same_out_other_in, space="column") > 0.99
+    assert shared_block_energy(base, same_out_other_in) < 1e-6

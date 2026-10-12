@@ -134,6 +134,30 @@ def subspace_overlap_score(layer1: LoraLayer, layer2: LoraLayer, space: Space = 
     return float(np.mean(np.cos(angles) ** 2))
 
 
+def shared_block_energy(layer1: LoraLayer, layer2: LoraLayer) -> float:
+    """Fraction of ``delta_2``'s energy inside the block ``delta_1`` both reads and writes.
+
+    ``||Qc^T delta_2 Qr||_F^2 / ||delta_2||_F^2``, with ``Qc`` an orthonormal
+    basis of ``col(B1)`` and ``Qr`` of ``row(A1)``. Column or row overlap alone
+    can be harmless (writing the same directions from inputs the other adapter
+    never reads); this is the part of ``delta_2`` that lands on exactly the
+    input-output channel ``delta_1`` uses. Asymmetric, in ``[0, 1]``, and
+    computed in rank-sized matrices.
+    """
+    Qc = _orthonormal_basis(layer1.B)
+    Qr = _orthonormal_basis(layer1.A.T)
+    total = layer_delta_frobenius_sq(layer2)
+    if total < 1e-24 or Qc.shape[1] == 0 or Qr.shape[1] == 0:
+        return 0.0
+    block = layer2.scale * (Qc.T @ layer2.B) @ (layer2.A @ Qr)
+    return float(min(max(float((block ** 2).sum()) / total, 0.0), 1.0))
+
+
+def symmetric_shared_block_energy(layer1: LoraLayer, layer2: LoraLayer) -> float:
+    """Mean of :func:`shared_block_energy` in both directions."""
+    return 0.5 * (shared_block_energy(layer1, layer2) + shared_block_energy(layer2, layer1))
+
+
 def layer_overlap_score(
     layer1: LoraLayer,
     layer2: LoraLayer,
