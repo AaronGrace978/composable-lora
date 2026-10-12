@@ -1,5 +1,7 @@
 # composable-lora
 
+![composable-lora](docs/banner.jpg)
+
 Tools and research code for **measuring and eliminating interference when stacking multiple LoRA adapters** on image diffusion models (SDXL and Flux, via Hugging Face `diffusers` + `peft`).
 
 ## The idea
@@ -39,7 +41,7 @@ clora train --output b.safetensors --steps 100 --rank 4 \
 # Measure overlap
 clora overlap a.safetensors b.safetensors --per-layer
 
-# Merge (methods: concat, naive_sum, weighted_sum, ties, ortho)
+# Merge (methods: concat, naive_sum, weighted_sum, ties, ortho, symmetric)
 clora merge --method ortho a.safetensors b.safetensors --out merged.safetensors
 
 # Evaluate stacked vs standalone on the toy model
@@ -63,8 +65,8 @@ pytest
 | Module | Purpose |
 | --- | --- |
 | `clora.lora_io` | Load/save LoRA safetensors in kohya and diffusers/peft key formats, normalized to per-layer `(A, B, alpha)`. |
-| `clora.overlap` | Principal angles between column/row spaces, normalized Frobenius overlap, per-pair aggregate score. |
-| `clora.merge` | Baselines (concat, naive/weighted sum, TIES-style) and orthogonal reprojection with optional rank growth. |
+| `clora.overlap` | Principal angles between column/row spaces, normalized Frobenius overlap, shared-block energy (the part of one update that lands on the input-output channel the other uses), per-pair aggregate score. |
+| `clora.merge` | Baselines (concat, naive/weighted sum, TIES-style), sequential orthogonal reprojection with optional rank growth, and an order-independent symmetric (block Löwdin) merge. |
 | `clora.train` | Toy-CPU LoRA training with group-sparsity and orthogonality penalties. |
 | `clora.eval` | Stacked-vs-standalone scoring with 95% bootstrap intervals. |
 | `clora.hf_models` | Real SDXL/Flux + peft + CLIP/DINOv2 helpers (lazy imports, opt-in). |
@@ -74,7 +76,8 @@ pytest
 
 - Training and evaluation are implemented against the toy model only. The evaluation scorers on the toy path are random projections that exercise the pipeline; they are not CLIP/DINOv2/ArcFace. Real-model helpers exist in `clora.hf_models` but are not yet wired into `clora train` / `clora eval` (`--base sdxl|flux` is rejected for now).
 - kohya key names are mapped to dotted names heuristically (see `clora.lora_io`), so cross-format layer matching is best-effort. Saving back to the format a LoRA was loaded from is exact.
-- `merge_orthogonal` is order-dependent: earlier LoRAs are left untouched and later ones are projected against them.
+- `merge_orthogonal` is order-dependent: earlier LoRAs are left untouched and later ones are projected against them. `merge_symmetric` is the order-independent alternative.
+- Both reprojection merges act on output space only. Whether removing output overlap actually reduces visible interference is the open question the roadmap's first milestone tests.
 
 ## Results
 
